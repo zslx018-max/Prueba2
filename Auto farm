@@ -1,0 +1,458 @@
+--[[
+    Z-HUB ULTRA FARM v12.0 "REDUNDANCIA 175%"
+    - Basado en forceTP de 45 paquetes (probado)
+    - Triple verificación de llegada
+    - Corrección automática de vacío (anti-desync)
+    - Espera de carga de mapa para móviles/lag
+    - Interfaz Rayfield con Toggle
+]]
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local RunService = game:GetService("RunService")
+local Players = game.Players
+local p = Players.LocalPlayer
+local vim = game:GetService("VirtualInputManager")
+local Workspace = game:GetService("Workspace")
+local Camera = Workspace.CurrentCamera
+
+-- ================== COORDENADAS (LAS MISMAS DE SIEMPRE) ==================
+local ZONA_COMPRA_POS = Vector3.new(-1842.77, 3.24, -0.32)
+local ZONA_COMPRA_ROT = CFrame.Angles(0, math.rad(-88.4), 0)
+
+local ZONA_VENTA_POS = Vector3.new(3150.53, 2.74, -178.38)
+local ZONA_VENTA_ROT = CFrame.Angles(0, math.rad(49.1), 0)
+
+local ZONA_LAVADO_POS = Vector3.new(-1847, 3.5, -9)
+local ZONA_LAVADO_ROT = CFrame.Angles(0, math.rad(-88.4), 0)
+
+-- ================== ITEMS ==================
+local ITEMS = {
+    ["Fake Designer Bag"] = 3,
+    ["Fake Watch"] = 3,
+    ["Sarsaparilla"] = 4
+}
+
+-- ================== VARIABLES ==================
+local farmActive = false
+local noclipConn = nil
+local char, hum, hrp
+local currentState = "IDLE"
+local lastStateChange = tick()
+local WATCHDOG_TIMEOUT = 120  -- Más tolerante para redes lentas
+
+-- ================== UI RAYFIELD ==================
+local Window = Rayfield:CreateWindow({
+    Name = "Z Hub | REDUNDANCIA 175%",
+    LoadingTitle = "Inyectando Estabilidad...",
+    LoadingSubtitle = "by Z Hub",
+    ConfigurationSaving = { Enabled = true, FolderName = "ZHubConfig", FileName = "ZHub_Redundancia_v12" }
+})
+
+local Tab = Window:CreateTab("Auto Farm", 4483362458)
+Tab:CreateSection("Control Principal")
+
+local statusDisplay
+
+local function setStatus(txt)
+    if statusDisplay then statusDisplay:Set("Estado: " .. txt) end
+end
+
+-- ================== UTILIDADES ==================
+local function refreshVars()
+    char = p.Character or p.CharacterAdded:Wait()
+    hum = char:WaitForChild("Humanoid", 5)
+    hrp = char:WaitForChild("HumanoidRootPart", 5)
+end
+
+local function isAlive()
+    return char and hum and hrp and hum.Health > 0
+end
+
+local function humanWait(min, max)
+    task.wait(min + math.random() * (max - min))
+end
+
+local function toggleNoclip(state)
+    if state then
+        if not noclipConn then
+            noclipConn = RunService.Stepped:Connect(function()
+                if not char then return end
+                for _, v in pairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
+                end
+            end)
+        end
+    else
+        if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
+    end
+end
+
+-- Detección de vacío (si caemos al inframundo)
+local function isInVoid()
+    return hrp and hrp.Position.Y < -50
+end
+
+-- Esperar a que el área tenga partes cargadas (para móviles lentos)
+local function waitForChunks(center, minParts)
+    minParts = minParts or 30
+    local start = tick()
+    repeat
+        local count = 0
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("BasePart") and (v.Position - center).Magnitude < 150 then
+                count += 1
+            end
+        end
+        if count >= minParts then return true end
+        task.wait(0.3)
+    until tick() - start > 15
+    return false
+end
+
+-- ================== TP MEJORADO (CON VERIFICACIÓN TRIPLE) ==================
+local function ultraForceTP(targetPos, targetRot)
+    local maxIntentos = 5
+    for intento = 1, maxIntentos do
+        if not farmActive then return false end
+        
+        local char = p.Character
+        if not char then return false end
+        local hrp = char:WaitForChild("HumanoidRootPart")
+        local hum = char:WaitForChild("Humanoid")
+        
+        -- Escudo táctico
+        hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+        
+        local noclip = RunService.Stepped:Connect(function()
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = false end
+            end
+        end)
+
+        hrp.Velocity = Vector3.zero
+        hrp.RotVelocity = Vector3.zero
+        hrp.Anchored = true
+        task.wait(0.1)
+
+        -- Bombardeo de 45 paquetes (con heartbeat para evitar lag)
+        for _ = 1, 45 do
+            hrp.CFrame = CFrame.new(targetPos) * targetRot
+            RunService.Heartbeat:Wait()
+        end
+
+        hum.PlatformStand = true
+        hrp.Anchored = false
+        
+        local endT = tick() + 2.3
+        repeat
+            hrp.CFrame = CFrame.new(targetPos) * targetRot
+            hrp.Velocity = Vector3.zero
+            hrp.RotVelocity = Vector3.zero
+            hum.Health = hum.MaxHealth
+            RunService.RenderStepped:Wait()
+        until tick() > endT
+
+        hum.PlatformStand = false
+        noclip:Disconnect()
+        hum:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+        
+        -- Esperar un poco para que el servidor sincronice
+        humanWait(0.5, 0.8)
+        
+        -- Verificar si realmente llegamos (triple chequeo)
+        local distancia = (hrp.Position - targetPos).Magnitude
+        if distancia <= 25 and not isInVoid() then
+            -- Éxito, esperar chunks
+            waitForChunks(targetPos, 25)
+            return true
+        else
+            Rayfield:Notify({
+                Title = "TP Reintento",
+                Content = "Intento "..intento.."/"..maxIntentos.." (Dist: "..math.floor(distancia)..")",
+                Duration = 1.5
+            })
+            -- Si falló, hacemos un mini-reset de posición
+            if intento < maxIntentos then
+                hrp.CFrame = CFrame.new(targetPos) * targetRot
+                task.wait(0.5)
+            end
+        end
+    end
+    return false
+end
+
+-- Movimiento corto (para ajustes finos)
+local function moverA(pos)
+    if not hrp then return end
+    toggleNoclip(true)
+    for i = 1, 5 do
+        hrp.CFrame = CFrame.new(pos) * ZONA_COMPRA_ROT
+        task.wait(0.05)
+    end
+end
+
+-- ================== INVENTARIO ==================
+local function getQty(name)
+    local c, l = 0, name:lower()
+    for _, v in ipairs(p.Backpack:GetChildren()) do
+        if v.Name:lower():find(l) then c += 1 end
+    end
+    local tool = char and char:FindFirstChildWhichIsA("Tool")
+    if tool and tool.Name:lower():find(l) then c += 1 end
+    return c
+end
+
+local function hasAllItems()
+    for item, max in pairs(ITEMS) do
+        if getQty(item) < max then return false end
+    end
+    return true
+end
+
+local function hasNoItems()
+    for item, _ in pairs(ITEMS) do
+        if getQty(item) > 0 then return false end
+    end
+    return true
+end
+
+-- ================== INTERACCIÓN CON PROMPTS (ROBUSTA) ==================
+local function scanAndFire(filterFn, timeout)
+    local endT = tick() + (timeout or 5)
+    while tick() < endT and farmActive do
+        local fired = false
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") and obj.Enabled then
+                local pPart = obj.Parent:IsA("BasePart") and obj.Parent or
+                              (obj.Parent and obj.Parent.Parent and obj.Parent.Parent:IsA("BasePart") and obj.Parent.Parent)
+                if pPart and pPart:IsA("BasePart") and (pPart.Position - hrp.Position).Magnitude <= 25 then
+                    local txt = (obj.ObjectText .. obj.ActionText):lower()
+                    if filterFn(txt) then
+                        obj.HoldDuration = 0
+                        fireproximityprompt(obj)
+                        fired = true
+                        humanWait(0.05, 0.1)
+                        break
+                    end
+                end
+            end
+        end
+        if not fired then humanWait(0.05, 0.1) end
+    end
+end
+
+-- ================== FASES ==================
+local function SmartBuy()
+    setStatus("COMPRANDO")
+    Rayfield:Notify({Title="Farm", Content="Comprando items...", Duration=1})
+    
+    local posCompra = ZONA_COMPRA_POS + Vector3.new(math.random(-1,1), 0, math.random(-1,1))
+    moverA(posCompra)
+    humanWait(0.3, 0.5)
+    
+    local start = tick()
+    while not hasAllItems() and (tick()-start) < 20 and farmActive do
+        scanAndFire(function(txt)
+            for item, max in pairs(ITEMS) do
+                if txt:find(item:lower()) and getQty(item) < max then
+                    return true
+                end
+            end
+            return false
+        end, 2)
+        if not hasAllItems() then
+            moverA(ZONA_COMPRA_POS + Vector3.new(math.random(-2,2), 0, math.random(-2,2)))
+        end
+    end
+end
+
+local function SmartSell()
+    setStatus("VENDIENDO")
+    Rayfield:Notify({Title="Farm", Content="Vendiendo items...", Duration=1})
+    
+    local posVenta = ZONA_VENTA_POS + Vector3.new(math.random(-2,2), 0, math.random(-2,2))
+    moverA(posVenta)
+    humanWait(0.3, 0.5)
+    
+    local start = tick()
+    while not hasNoItems() and (tick()-start) < 15 and farmActive do
+        scanAndFire(function(txt)
+            return txt:find("sell") or txt:find("smuggle")
+        end, 2)
+        if not hasNoItems() and (tick()-start) > 4 then
+            -- Respaldo por UI
+            for _, gui in ipairs(p.PlayerGui:GetDescendants()) do
+                if gui:IsA("TextButton") and gui.Visible and gui.Text:lower():find("sell") then
+                    local x = gui.AbsolutePosition.X + gui.AbsoluteSize.X/2
+                    local y = gui.AbsolutePosition.Y + gui.AbsoluteSize.Y/2 + 36
+                    vim:SendMouseButtonEvent(x, y, 0, true, game, 1)
+                    task.wait(0.05)
+                    vim:SendMouseButtonEvent(x, y, 0, false, game, 1)
+                    break
+                end
+            end
+        end
+    end
+end
+
+local function SmartWash()
+    if getQty("Briefcase") == 0 then return end
+    setStatus("LAVANDO")
+    Rayfield:Notify({Title="Farm", Content="Lavando maletín...", Duration=1})
+    
+    moverA(ZONA_LAVADO_POS)
+    humanWait(0.3, 0.5)
+    
+    local start = tick()
+    while getQty("Briefcase") > 0 and (tick()-start) < 15 and farmActive do
+        scanAndFire(function(txt)
+            return txt:find("laundry") or txt:find("dirty")
+        end, 2)
+    end
+    moverA(ZONA_COMPRA_POS)
+end
+
+-- ================== RECOVERY ANTI-VACÍO ==================
+local function emergencyRecovery()
+    setStatus("RECOVERY")
+    Rayfield:Notify({Title="ALERTA", Content="Recuperando de desincronización...", Duration=2})
+    toggleNoclip(true)
+    if isInVoid() or not isNear(ZONA_COMPRA_POS, 100) then
+        -- Reset completo si estamos en el vacío
+        pcall(function() char:BreakJoints() end)
+        repeat task.wait(0.5) until p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+        refreshVars()
+    end
+    ultraForceTP(ZONA_COMPRA_POS, ZONA_COMPRA_ROT)
+    humanWait(2, 3)
+end
+
+-- ================== WATCHDOG ==================
+local function startWatchdog()
+    task.spawn(function()
+        while farmActive do
+            humanWait(10, 15)
+            if farmActive and currentState ~= "IDLE" then
+                if tick() - lastStateChange > WATCHDOG_TIMEOUT then
+                    pcall(emergencyRecovery)
+                elseif isInVoid() then
+                    pcall(emergencyRecovery)
+                end
+            end
+        end
+    end)
+end
+
+-- ================== LOOP ==================
+local function startFarmLoop()
+    task.spawn(function()
+        refreshVars()
+        
+        setStatus("INICIANDO")
+        if not ultraForceTP(ZONA_COMPRA_POS, ZONA_COMPRA_ROT) then
+            farmActive = false
+            Rayfield:Notify({Title="Error", Content="No se pudo iniciar. Reintenta.", Duration=3})
+            return
+        end
+        
+        startWatchdog()
+        
+        while farmActive do
+            local ok, err = pcall(function()
+                refreshVars()
+                if not isAlive() then emergencyRecovery(); return end
+                if isInVoid() then emergencyRecovery(); return end
+                
+                -- COMPRA
+                currentState = "BUY"; lastStateChange = tick()
+                SmartBuy()
+                if not farmActive then return end
+                
+                -- TP A VENTA
+                currentState = "TP_SELL"; lastStateChange = tick()
+                setStatus("VIAJANDO A VENTA")
+                if not ultraForceTP(ZONA_VENTA_POS, ZONA_VENTA_ROT) then
+                    emergencyRecovery(); return
+                end
+                
+                -- VENTA
+                currentState = "SELL"; lastStateChange = tick()
+                SmartSell()
+                if not farmActive then return end
+                
+                -- TP DE REGRESO
+                currentState = "TP_RETURN"; lastStateChange = tick()
+                setStatus("REGRESANDO")
+                if not ultraForceTP(ZONA_COMPRA_POS, ZONA_COMPRA_ROT) then
+                    emergencyRecovery(); return
+                end
+                
+                -- LAVADO
+                if getQty("Briefcase") > 0 then
+                    currentState = "WASH"; lastStateChange = tick()
+                    SmartWash()
+                end
+                
+                currentState = "IDLE"
+                setStatus("CICLO OK")
+                humanWait(1, 2)
+            end)
+            
+            if not ok then
+                warn("Error en loop:", err)
+                pcall(emergencyRecovery)
+                humanWait(3, 5)
+            end
+        end
+        
+        toggleNoclip(false)
+        p.CameraMaxZoomDistance = 128
+        p.CameraMinZoomDistance = 0.5
+        setStatus("INACTIVO")
+    end)
+end
+
+-- ================== TOGGLE ==================
+Tab:CreateToggle({
+    Name = "Auto Farm 175%",
+    CurrentValue = false,
+    Flag = "AutoFarmToggle",
+    Callback = function(val)
+        farmActive = val
+        if farmActive then
+            p.CameraMaxZoomDistance = 10
+            p.CameraMinZoomDistance = 10
+            startFarmLoop()
+        else
+            p.CameraMaxZoomDistance = 128
+            p.CameraMinZoomDistance = 0.5
+            pcall(function() if hum then hum.Health = 0 end end)
+            setStatus("INACTIVO")
+        end
+    end,
+})
+
+Tab:CreateSection("Estado")
+statusDisplay = Tab:CreateLabel("Estado: INACTIVO")
+
+Tab:CreateSection("Mantenimiento")
+Tab:CreateButton({
+    Name = "Fix Character (Reset)",
+    Callback = function()
+        if p.Character then p.Character:BreakJoints() end
+    end,
+})
+
+if p.Character then refreshVars() end
+p.CharacterAdded:Connect(function()
+    if farmActive then
+        humanWait(0.5,1)
+        refreshVars()
+    end
+end)
+
+Rayfield:Notify({
+    Title = "Z Hub 175%",
+    Content = "Redundancia activada. ¡A prueba de lag!",
+    Duration = 5
+})
