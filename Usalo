@@ -1,0 +1,80 @@
+-- Cargamos la librería WindUI
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/zslx018-max/Z/refs/heads/main/f1"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "X Hub",
+    Icon = "car",
+    Folder = "ZHub",
+    Size = UDim2.fromOffset(75, 365),
+    Transparent = false,
+    Theme = "Dark",
+    IconSize = 20, 
+    Resizable = true,
+    SideBarWidth = 200,
+    Background = "",
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+
+    OpenButton = {
+        Title = "N - Hub",
+        CornerRadius = UDim.new(0,3),
+        StrokeThickness = 1.2,
+        Enabled = true,
+        Draggable = true,
+        OnlyMobile = false,
+        Color = ColorSequence.new(
+            Color3.fromHex("#484848"), 
+            Color3.fromHex("#ffffff")
+        )
+    },
+
+    User = {
+        Enabled = true,
+        Anonymous = true,
+        Callback = function() print("User icon clicked") end,
+    }
+})
+  
+Window:Tag({
+    Title = "Free",
+    Icon = "lock-open",
+    Color = Color3.fromHex("#0040ff"),
+    Border = true,
+})
+
+-- ==============================================================================
+-- 5 CATEGORÍAS (TABS) CON 2 BOTONES CADA UNA (VACÍOS)
+-- ==============================================================================
+
+-- Categoría 1: Transporte
+local TransporteTab = Window:Tab({ Title = "Transporte", Icon = "car" })
+TransporteTab:Section({ Title = "「🚗」Vehiculos" })
+TransporteTab:Button({ Title = "Spawnear Auto", Desc = "Genera un vehículo", Icon = "car", Callback = function() end })
+TransporteTab:Button({ Title = "Reparar Auto", Desc = "Repara el vehículo", Icon = "wrench", Callback = function() end })
+
+-- Categoría 2: Jugador
+local JugadorTab = Window:Tab({ Title = "Jugador", Icon = "user" })
+JugadorTab:Section({ Title = "「👤」Stats" })
+JugadorTab:Button({ Title = "Curar", Desc = "Restaura vida", Icon = "heart", Callback = function() end })
+JugadorTab:Button({ Title = "Velocidad", Desc = "Aumenta velocidad", Icon = "zap", Callback = function() end })
+
+-- Categoría 3: Mundo
+local MundoTab = Window:Tab({ Title = "Mundo", Icon = "globe" })
+MundoTab:Section({ Title = "「🌍」Entorno" })
+MundoTab:Button({ Title = "Día", Desc = "Cambia a día", Icon = "sun", Callback = function() end })
+MundoTab:Button({ Title = "Noche", Desc = "Cambia a noche", Icon = "moon", Callback = function() end })
+
+-- Categoría 4: Utilidades
+local UtilidadesTab = Window:Tab({ Title = "Utilidades", Icon = "tool" })
+UtilidadesTab:Section({ Title = "「🔧」Herramientas" })
+UtilidadesTab:Button({ Title = "Noclip", Desc = "Activa/Desactiva noclip", Icon = "clipboard", Callback = function() end })
+UtilidadesTab:Button({ Title = "Fly", Desc = "Activa/Desactiva vuelo", Icon = "feather", Callback = function() end })
+
+-- Categoría 5: Teleports
+local TeleportsTab = Window:Tab({ Title = "Teleports", Icon = "map-pin" })
+TeleportsTab:Section({ Title = "「📍」Destinos" })
+TeleportsTab:Button({ Title = "TP a Centro", Desc = "Teletransporta al centro", Icon = "target", Callback = function() end })
+TeleportsTab:Button({ Title = "TP a Tienda", Desc = "Teletransporta a la tienda", Icon = "shopping-cart", Callback = function() end })
+
+print("Z-Hub: UI cargada - 5 categorías con 2 botones cada una (sin funciones)")
