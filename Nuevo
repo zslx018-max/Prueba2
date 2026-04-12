@@ -1,0 +1,90 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/zslx018-max/Z/refs/heads/main/f1"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "ZBeta v1.0",
+    Icon = "map-pin",
+    Folder = "ZBeta",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = false,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    HideSearchBar = true,
+})
+
+local function Teleport(x, y, z)
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.CFrame = CFrame.new(x, y + 30, z)
+        task.wait(0.2)
+        root.CFrame = CFrame.new(x, y + 10, z)
+    end
+end
+
+local MainTab = Window:Tab({ Title = "El Paso Texas", Icon = "home" })
+
+MainTab:Section({ Title = "Gym & Tienda" })
+
+MainTab:Button({ 
+    Title = "GymBro - Vender Merca", 
+    Desc = "TP al GymBro", 
+    Icon = "dumbbell", 
+    Callback = function()
+        Teleport(3183, 3, -163)
+    end 
+})
+
+MainTab:Button({ 
+    Title = "Tienda Sell Goods", 
+    Desc = "TP a la tienda", 
+    Icon = "store", 
+    Callback = function()
+        Teleport(3497, 3, -753)
+    end 
+})
+
+MainTab:Section({ Title = "Mejoras" })
+
+MainTab:Button({ 
+    Title = "Speed x6", 
+    Desc = "Velocidad máxima", 
+    Icon = "zap", 
+    Callback = function()
+        pcall(function() 
+            LocalPlayer.Character.Humanoid.WalkSpeed = 96 
+        end)
+    end 
+})
+
+MainTab:Section({ Title = "Utilidades" })
+
+MainTab:Button({ 
+    Title = "Get My Position", 
+    Desc = "Muestra tu ubicación actual", 
+    Icon = "map-pin", 
+    Callback = function()
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            local p = root.Position
+            local msg = string.format("X: %.0f | Y: %.0f | Z: %.0f", p.X, p.Y, p.Z)
+            WindUI:Notification({
+                Title = "Posición",
+                Content = msg,
+                Duration = 10,
+                Type = "default"
+            })
+        end
+    end 
+})
+
+WindUI:Notification({
+    Title = "ZBeta v1.0",
+    Content = "Script cargado | El Paso Texas",
+    Duration = 8,
+    Type = "success"
+})
+
+print("ZBeta Style cargado en Win UI")
