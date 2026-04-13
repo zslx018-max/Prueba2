@@ -1,0 +1,609 @@
+-- ==============================================================================
+-- Z-HUB PREMIUM AUTO FARM + SUPER BYPASS 100% (TOGGLE FIX DEFINITIVO)
+-- ==============================================================================
+
+-- Cargamos la librería WindUI
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/zslx018-max/Z/refs/heads/main/f1"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "X Hub",
+    Icon = "car",
+    Folder = "CloudHub",
+    Size = UDim2.fromOffset(220, 435), 
+    Transparent = false,
+    Theme = "Dark",
+    IconSize = 22, 
+    Resizable = true,
+    SideBarWidth = 200,
+    Background = "",
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+
+    OpenButton = {
+        Title = "X - Hub",
+        CornerRadius = UDim.new(0,3),
+        StrokeThickness = 1.2,
+        Enabled = true,
+        Draggable = true,
+        OnlyMobile = false,
+        Color = ColorSequence.new(
+            Color3.fromHex("#484848"), 
+            Color3.fromHex("#ffffff")
+        )
+    },
+
+    User = {
+        Enabled = true,
+        Anonymous = true,
+        Callback = function() print("User icon clicked") end,
+    }
+})
+  
+Window:Tag({
+    Title = "Free",
+    Icon = "lock-open",
+    Color = Color3.fromHex("#0040ff"),
+    Border = true,
+})
+
+local CreditsTab = Window:Tab({ Title = "Créditos", Icon = "info" })
+local FarmTab = Window:Tab({ Title = "Auto Farm", Icon = "car" })
+
+FarmTab:Section({ Title = "「📂」Autofarm" })
+
+-- 🎚️ TOGGLE: AUTO-FARM (CORREGIDO CON BANDERA ANTI-FANTASMA)
+local firstToggle = true  -- Bandera para ignorar el primer disparo falso
+local FarmToggle = FarmTab:Toggle({
+    Title = "Autofarm",
+    Icon = "car",
+    Default = false,
+    Callback = function(state)
+        -- Ignorar la primera llamada fantasma de WindUI
+        if firstToggle then
+            firstToggle = false
+            return
+        end
+        
+        -- Llamar directamente al toggle del core (sin condiciones extra)
+        if _G.zHub and _G.zHub.toggle then
+            _G.zHub.toggle()
+        end
+    end
+})
+
+FarmToggle:SetDesc("Enable or disable the Autofarm!")
+
+FarmTab:Section({ Title = "「🔰」Others" })
+
+local AntiAFKToggle = FarmTab:Toggle({
+    Title = "AntiAfk",
+    Default = false,
+    Callback = function(state)
+        if _G.zHub and _G.zHub.antiAFK and _G.zHub.antiAFK.toggle then
+            _G.zHub.antiAFK.toggle()
+        end
+    end
+})
+
+local HopBtn = FarmTab:Button({
+    Title = "Server Hop",
+    Desc = "Busca el tp mas vacio. y te lleva a el.",
+    Icon = "rotate-cw",
+    Callback = function()
+        if _G.zHub and _G.zHub.serverHop then
+            _G.zHub.serverHop()
+        end
+    end
+})
+
+-- Créditos
+CreditsTab:Section({ Title = "Creditos" })
+CreditsTab:Paragraph({ Title = "Actualizaciones+", Desc = "Script creado por @znoreste. Auto farm + SUPER BYPASS 100%" })
+CreditsTab:Divider()
+CreditsTab:Button({ Title = "TikTok", Desc = "Cuenta Oficial De Tiktok!! Sigueme", Icon = "video", Callback = function() setclipboard("https://www.tiktok.com/@TU_USER") WindUI:Notify({ Title = "TikTok", Content = "Tiktok Copiado Correctamente", Duration = 3 }) end })
+CreditsTab:Button({ Title = "Discord", Desc = "Mantente Actualizado Sobre Nuevas Actualizaciones o Proximos Scripts.", Icon = "message-circle", Callback = function() setclipboard("https://discord.gg/TU_LINK") WindUI:Notify({ Title = "Discord Copiado", Content = "Discord Copiado Correctamente.", Duration = 3 }) end })
+
+-- ==============================================================================
+-- SUPER BYPASS 100% (NIVEL DIOS)
+-- ==============================================================================
+local SuperBypass = {}
+do
+    local p = game.Players.LocalPlayer
+    local ws = game:GetService("Workspace")
+    local rs = game:GetService("ReplicatedStorage")
+    local rf = game:GetService("ReplicatedFirst")
+    local ls = game:GetService("LogService")
+    local ps = p:WaitForChild("PlayerScripts")
+    local active = false
+    local originalUserId = p.UserId
+    local fakeUserId = 1
+
+    function SuperBypass:cleanEnvironment()
+        pcall(function()
+            for _, obj in ipairs(ws:GetChildren()) do
+                if obj:IsA("Folder") and (obj.Name:lower():find("log") or obj.Name:lower():find("ac") or obj.Name:lower():find("anticheat")) then
+                    obj:Destroy()
+                end
+            end
+            local pf = p:FindFirstChild("DetectionLogs")
+            if pf then pf:Destroy() end
+            for _, container in ipairs({rf, rs}) do
+                for _, obj in ipairs(container:GetDescendants()) do
+                    if obj:IsA("ModuleScript") and (obj.Name:lower():find("anticheat") or obj.Name:lower():find("ac") or obj.Name:lower():find("denys")) then
+                        obj:Destroy()
+                    end
+                end
+            end
+        end)
+    end
+
+    function SuperBypass:hookMetamethods()
+        local mt = getrawmetatable(game)
+        local oldNamecall = mt.__namecall
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+            if method == "InvokeServer" or method == "FireServer" then
+                local name = tostring(self):lower()
+                if name:find("ban") or name:find("kick") or name:find("report") or name:find("detect") then
+                    return nil
+                end
+            end
+            if method == "GetObjects" and args[1] and tostring(args[1]):find("anticheat") then
+                return {}
+            end
+            return oldNamecall(self, ...)
+        end)
+
+        local humMt = getrawmetatable(Instance.new("Humanoid"))
+        local oldHumIndex = humMt.__index
+        humMt.__index = newcclosure(function(t, k)
+            if active and (k == "WalkSpeed" or k == "JumpPower") then
+                return 16
+            end
+            return oldHumIndex(t, k)
+        end)
+    end
+
+    function SuperBypass:disablePlayerScripts()
+        for _, script in ipairs(ps:GetDescendants()) do
+            if script:IsA("LocalScript") or script:IsA("ModuleScript") then
+                local name = script.Name:lower()
+                if name:find("anticheat") or name:find("ac") or name:find("denys") or name:find("detector") then
+                    pcall(function() script.Disabled = true end)
+                    pcall(function() script:Destroy() end)
+                end
+            end
+        end
+    end
+
+    function SuperBypass:spoofUserId()
+        local oldRequest = request or http_request or syn.request
+        if oldRequest then
+            hookfunction(oldRequest, function(req)
+                if req.Url:find("roblox") then
+                    req.Body = req.Body:gsub("userId="..originalUserId, "userId="..fakeUserId)
+                    req.Body = req.Body:gsub("%"..originalUserId, "%"..fakeUserId)
+                end
+                return oldRequest(req)
+            end)
+        end
+    end
+
+    function SuperBypass:startLogCleaner()
+        task.spawn(function()
+            while active do
+                pcall(function() ls:ClearOutput() end)
+                task.wait(30)
+            end
+        end)
+    end
+
+    function SuperBypass:enable()
+        if active then return end
+        active = true
+        self:cleanEnvironment()
+        self:hookMetamethods()
+        self:disablePlayerScripts()
+        self:spoofUserId()
+        self:startLogCleaner()
+        WindUI:Notify({ Title = "Super Bypass 100%", Content = "Modo Dios activado. ¡Indetectable!", Duration = 3 })
+    end
+end
+Bypass = SuperBypass
+
+-- ==============================================================================
+-- CORE AUTOFARM PREMIUM (MISMA LÓGICA)
+-- ==============================================================================
+local p = game.Players.LocalPlayer
+local rs = game:GetService("RunService")
+local vim = game:GetService("VirtualInputManager")
+local char, hum, hrp
+local miAsiento = nil
+local autoFarm = false
+
+local function refreshVars()
+    char = p.Character or p.CharacterAdded:Wait()
+    hum = char:WaitForChild("Humanoid")
+    hrp = char:WaitForChild("HumanoidRootPart")
+end
+refreshVars()
+
+local items = {["Fake Designer Bag"]=3, ["Fake Watch"]=3, ["Sarsaparilla"]=4}
+
+local function NukeVehiclePhysics(veh)
+    if not veh then return end
+    for _, v in pairs(veh:GetDescendants()) do
+        if v:IsA("Script") or v:IsA("LocalScript") then v.Disabled = true end
+        if v:IsA("Constraint") then v:Destroy() end
+        if v:IsA("BasePart") then
+            local n = v.Name:lower()
+            if n:find("wheel") or n:find("tire") or n:find("llanta") or n:find("fr") or n:find("fl") or n:find("rr") or n:find("rl") or n:find("axle") or n:find("suspension") then
+                v:Destroy()
+            end
+        end
+    end
+    for _, v in pairs(veh:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Anchored = true
+            v.CanCollide = false
+            v.AssemblyLinearVelocity = Vector3.zero
+            v.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
+end
+
+local function getQty(name)
+    local c, s = 0, name:lower()
+    for _, v in pairs(p.Backpack:GetChildren()) do if v.Name:lower():find(s) then c=c+1 end end
+    local t = char:FindFirstChildWhichIsA("Tool"); if t and t.Name:lower():find(s) then c=c+1 end
+    return c
+end
+
+local function hasAllItems()
+    for item, maxQty in pairs(items) do if getQty(item) < maxQty then return false end end
+    return true
+end
+
+local function hasNoItems()
+    for item, _ in pairs(items) do if getQty(item) > 0 then return false end end
+    return true
+end
+
+local noclipLoop = nil
+local function toggleNoclip(state)
+    if state then
+        if not noclipLoop then
+            noclipLoop = rs.Stepped:Connect(function()
+                if not char then return end
+                for _, v in pairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
+                end
+            end)
+        end
+    else
+        if noclipLoop then noclipLoop:Disconnect(); noclipLoop = nil end
+    end
+end
+
+local function EnsureSit()
+    if not miAsiento or not autoFarm then return end
+    if not miAsiento.Parent then miAsiento = nil; return end
+    toggleNoclip(false)
+    if hum.SeatPart == miAsiento then return end
+    local t = tick()
+    while hum.SeatPart ~= miAsiento and autoFarm and tick() - t < 5 do
+        if not miAsiento or not miAsiento.Parent then miAsiento = nil; return end
+        hrp.CFrame = miAsiento.CFrame
+        miAsiento:Sit(hum)
+        task.wait(0.1)
+    end
+    task.wait(0.2)
+end
+
+local function safeVehicleTP(destCFrame, isIndoor)
+    if not miAsiento or not miAsiento.Parent then return end
+    local veh = miAsiento:FindFirstAncestorOfClass("Model")
+    if not veh then return end
+    NukeVehiclePhysics(veh)
+    task.wait(0.1)
+    if hum.SeatPart ~= miAsiento then
+        hrp.CFrame = miAsiento.CFrame
+        miAsiento:Sit(hum)
+        task.wait(0.15)
+    end
+    local finalCFrame
+    if isIndoor then
+        finalCFrame = destCFrame
+    else
+        local _, sz = veh:GetBoundingBox()
+        finalCFrame = destCFrame + Vector3.new(0, (sz.Y / 2) + 1.5, 0)
+    end
+    veh:PivotTo(finalCFrame)
+    task.wait(0.3)
+    for _, v in pairs(veh:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Anchored = true
+            v.AssemblyLinearVelocity = Vector3.zero
+            v.AssemblyAngularVelocity = Vector3.zero
+        end
+    end
+    task.wait(0.1)
+end
+
+local function safeExitSeat(walkDest)
+    if not hrp or not miAsiento then return end
+    if not miAsiento.Parent then miAsiento = nil; return end
+    toggleNoclip(true)
+    hum.Sit = false
+    task.wait(0.1)
+    hrp.Anchored = true
+    task.wait(0.05)
+    hrp.CFrame = CFrame.new(walkDest.X, walkDest.Y, walkDest.Z)
+    task.wait(0.15)
+    hrp.Anchored = false
+    task.wait(0.1)
+end
+
+local function SmartWash()
+    if getQty("Briefcase") == 0 then return end
+    hrp.Anchored = true
+    hrp.CFrame = CFrame.new(-1829, 3, -13)
+    hrp.Anchored = false
+    task.wait(0.1)
+    local lastTeleport = tick()
+    local endTime = tick() + 10
+    while getQty("Briefcase") > 0 and tick() < endTime and autoFarm do
+        if tick() - lastTeleport >= 0.5 then
+            hrp.Anchored = true
+            hrp.CFrame = CFrame.new(-1829, 3, -13)
+            hrp.Anchored = false
+            lastTeleport = tick()
+        end
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                local pPart = obj.Parent:IsA("BasePart") and obj.Parent or obj.Parent.Parent
+                if pPart and pPart:IsA("BasePart") and (pPart.Position - hrp.Position).Magnitude <= 18 then
+                    local txt = (obj.ObjectText .. obj.ActionText):lower()
+                    if txt:find("laundry") or txt:find("dirty") or txt:find("wash") then
+                        obj.HoldDuration = 0
+                        fireproximityprompt(obj)
+                        task.wait(0.05)
+                    end
+                end
+            end
+        end
+        task.wait(0.1)
+    end
+    hrp.Anchored = true
+    hrp.CFrame = CFrame.new(-1843, 3, 8)
+    hrp.Anchored = false
+    task.wait(0.1)
+end
+
+local function SmartBuy()
+    local marketPos = CFrame.new(-1843, 3, 8)
+    local endTime = tick() + 15
+    local lastTeleport = tick()
+    while not hasAllItems() and tick() < endTime and autoFarm do
+        if tick() - lastTeleport >= 0.5 then
+            hrp.Anchored = true
+            hrp.CFrame = marketPos
+            hrp.Anchored = false
+            lastTeleport = tick()
+        end
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                local pPart = obj.Parent:IsA("BasePart") and obj.Parent or obj.Parent.Parent
+                if pPart and pPart:IsA("BasePart") and (pPart.Position - hrp.Position).Magnitude <= 18 then
+                    local txt = (obj.ObjectText .. obj.ActionText):lower()
+                    for item, maxQty in pairs(items) do
+                        if txt:find(item:lower()) and getQty(item) < maxQty then
+                            obj.HoldDuration = 0
+                            fireproximityprompt(obj)
+                            task.wait()
+                        end
+                    end
+                end
+            end
+        end
+        task.wait(0.03)
+    end
+end
+
+local function SmartSell()
+    local endTime = tick() + 8
+    while not hasNoItems() and tick() < endTime and autoFarm do
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                local pPart = obj.Parent:IsA("BasePart") and obj.Parent or obj.Parent.Parent
+                if pPart and pPart:IsA("BasePart") and (pPart.Position - hrp.Position).Magnitude <= 18 then
+                    local txt = (obj.ObjectText .. obj.ActionText):lower()
+                    if txt:find("sell") or txt:find("smuggle") then
+                        obj.HoldDuration = 0; fireproximityprompt(obj); task.wait(0.05)
+                    end
+                end
+            end
+        end
+        task.wait(0.1)
+    end
+end
+
+local function forceUIClick(textoBoton)
+    for _, gui in pairs(p.PlayerGui:GetDescendants()) do
+        if gui:IsA("TextButton") and gui.Visible and gui.AbsolutePosition.X > 0 then
+            if gui.Text:lower():find(textoBoton:lower()) then
+                local x = gui.AbsolutePosition.X + (gui.AbsoluteSize.X / 2)
+                local y = gui.AbsolutePosition.Y + (gui.AbsoluteSize.Y / 2) + 36
+                vim:SendMouseButtonEvent(x, y, 0, true, game, 1)
+                task.wait(0.05)
+                vim:SendMouseButtonEvent(x, y, 0, false, game, 1)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function AutoGetCarPremium()
+    if hum.SeatPart then miAsiento = hum.SeatPart; return end
+    local carSpawnPos = CFrame.new(-1947, 3.5, 55)
+    local startTime = tick()
+    local maxDuration = 15
+    local lastTeleport = tick()
+    while not hum.SeatPart and tick() - startTime < maxDuration and autoFarm do
+        if tick() - lastTeleport >= 0.5 then
+            hrp.Anchored = true
+            hrp.CFrame = carSpawnPos
+            hrp.Anchored = false
+            lastTeleport = tick()
+        end
+        forceUIClick("select")
+        task.wait(0.1)
+        forceUIClick("spawn")
+        task.wait(0.1)
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj:IsA("VehicleSeat") or obj:IsA("Seat")) and (obj.Position - hrp.Position).Magnitude < 30 then
+                obj:Sit(hum)
+                if hum.SeatPart then miAsiento = hum.SeatPart; return end
+            end
+        end
+        task.wait(0.2)
+    end
+    if not hum.SeatPart then task.wait(1) AutoGetCarPremium() end
+end
+
+local function mainLoop()
+    while true do
+        task.wait(0.2)
+        if autoFarm then
+            pcall(function()
+                refreshVars()
+                if not miAsiento or not miAsiento.Parent then
+                    if hum.SeatPart then miAsiento = hum.SeatPart else AutoGetCarPremium() end
+                    if not miAsiento then return end
+                end
+                EnsureSit()
+                safeVehicleTP(CFrame.new(-1849, 1, 25), true)
+                safeExitSeat(Vector3.new(-1843, 3, 8))
+                task.wait(0.1)
+                SmartWash()
+                SmartBuy()
+                EnsureSit()
+                safeVehicleTP(CFrame.new(3514, 14, -723) * CFrame.Angles(0, math.rad(26), 0), false)
+                safeExitSeat(Vector3.new(3506, 4, -744))
+                task.wait(0.1)
+                SmartSell()
+                EnsureSit()
+            end)
+        end
+    end
+end
+
+task.spawn(mainLoop)
+
+-- ==============================================================================
+-- CONTROLES (start/stop/toggle)
+-- ==============================================================================
+_G.zHub = _G.zHub or {}
+_G.zHub.autoFarm = autoFarm
+
+function _G.zHub.start()
+    if autoFarm then return end
+    Bypass:enable()
+    autoFarm = true
+    _G.zHub.autoFarm = true
+    print("Farm activado")
+end
+
+function _G.zHub.stop()
+    autoFarm = false
+    _G.zHub.autoFarm = false
+    miAsiento = nil
+    p.CameraMaxZoomDistance = 128
+    p.CameraMinZoomDistance = 0.5
+    pcall(function() if hum then hum.Health = 0 end end)
+    print("Farm detenido")
+end
+
+function _G.zHub.toggle()
+    if autoFarm then _G.zHub.stop() else _G.zHub.start() end
+end
+
+-- ==============================================================================
+-- ANTI-AFK
+-- ==============================================================================
+local cam = workspace.CurrentCamera
+local uis = game:GetService("UserInputService")
+local antiAFKActive = false
+
+local function moveCamera()
+    if not antiAFKActive then return end
+    local cf = cam.CFrame
+    cam.CFrame = cf * CFrame.Angles(0, math.rad(1), 0)
+    task.wait(0.05)
+    cam.CFrame = cf * CFrame.Angles(0, math.rad(-1), 0)
+    task.wait(0.05)
+    cam.CFrame = cf
+end
+
+local function pressW()
+    if not antiAFKActive then return end
+    vim:SendKeyEvent(true, "W", false, game)
+    task.wait(0.05)
+    vim:SendKeyEvent(false, "W", false, game)
+end
+
+local function moveMouse()
+    if not antiAFKActive then return end
+    local pos = uis:GetMouseLocation()
+    vim:SendMouseMovementEvent(pos.X + 1, pos.Y, 0, game)
+    task.wait(0.05)
+    vim:SendMouseMovementEvent(pos.X, pos.Y, 0, game)
+end
+
+local function antiAFKLoop()
+    while antiAFKActive do
+        moveCamera()
+        pressW()
+        moveMouse()
+        task.wait(math.random(40, 70))
+    end
+end
+
+_G.zHub.antiAFK = {
+    toggle = function()
+        antiAFKActive = not antiAFKActive
+        if antiAFKActive then
+            task.spawn(antiAFKLoop)
+            WindUI:Notify({ Title = "Anti-AFK", Content = "Activado", Duration = 2 })
+        else
+            WindUI:Notify({ Title = "Anti-AFK", Content = "Desactivado", Duration = 2 })
+        end
+    end
+}
+
+-- ==============================================================================
+-- SERVER HOP
+-- ==============================================================================
+local PlaceId = 109872214376771
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+
+_G.zHub.serverHop = function()
+    local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    if success and result and result.data then
+        for _, server in ipairs(result.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(PlaceId, server.id, p)
+                return true
+            end
+        end
+    end
+    WindUI:Notify({ Title = "Server Hop", Content = "No hay servidores más vacíos.", Duration = 3 })
+    return false
+end
+
+print("Z-Hub: Premium Farm + Super Bypass 100% cargado. Toggle arreglado con bandera anti-fantasma.")
